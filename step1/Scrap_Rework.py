@@ -34,10 +34,10 @@ if not os.path.exists(folder_Output):
 
 # หา table ที่มี id ต่างๆ
 tables = {
-    'MainContent_GridView1': 'KPI_Rework_output.csv',
-    'MainContent_GridView2': 'KPI_MH_output.csv',
-    'MainContent_GridView3': 'KPI_Lost_output.csv',
-    'MainContent_GridView5': 'KPI_repair_color_output.csv'
+    'MainContent_GridView1': 'KPI_Rework.csv',
+    # 'MainContent_GridView3': 'KPI_pdrw.csv',
+    'MainContent_GridView2': 'KPI_Lost.csv',
+    'MainContent_GridView5': 'KPI_Repair_Color.csv'
 }
 
 # ตรวจสอบและบันทึกข้อมูลของแต่ละตาราง
