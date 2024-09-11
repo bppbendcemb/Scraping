@@ -38,7 +38,7 @@ if not os.path.exists(folder_Output):
 for row in data[1:]:
     # กำหนดค่า kpi_id ตามประเภท
     if row[1] == 'สาเหตุจากพนักงาน(ชิ้น)':
-        kpi_id = '20'
+        kpi_id = '20'       
     elif row[1] == 'สาเหตุจากวัตถุดิบ(ชิ้น)':
         kpi_id = '21'
     elif row[1] == 'วัตถุดิบเฉพาะ Dis 442/Com054 (ชิ้น)':
