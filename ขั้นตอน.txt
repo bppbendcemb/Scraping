@@ -1,0 +1,10 @@
+step1
+Scrap_Manhour.py : ดึงข้อมูลจาก http://bppnet/report/pd/bppmh.aspx เปลี่ยนวันที่เป็นเดือนที่แล้ว บันทึกเป็น KPI_Manhour.csv
+Scrap_Reject.py  : ดึงข้อมูลจาก http://bppnet/qm/report/ccrlst.aspx?ktype=yr&key=2024
+step2
+
+step3
+1.calculate_rework.py : แปลงข้อมูลให้เป็น ppm จากไฟล์ Rework_new.csv บันทึก Rework_new_calculated.csv
+2.savetosqlserver.py  : แปลงข้อมูลให้เป็น ppm จากไฟล์ Rework_new.csv บันทึก sql server table : Rework_new_calculated
+3.rec_rework.py       : บันทึก Rework_new.csv ลง sql server table : KPI_rework
+# อาจใช้ข้อ 2 เท่านั้น
