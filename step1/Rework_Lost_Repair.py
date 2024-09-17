@@ -5,6 +5,13 @@ import chardet
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import logging
+import pyodbc
+from sqlalchemy import create_engine
+import csv
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Function to extract table data and combine them
 def get_table_data(soup, table_ids):
@@ -17,22 +24,28 @@ def get_table_data(soup, table_ids):
             table_df = pd.DataFrame(rows, columns=headers)
             table_data.append(table_df)
         else:
-            print(f"ไม่พบตารางที่มี id '{table_id}'")
+            logging.warning(f"Table with id '{table_id}' not found.")
     return pd.concat(table_data, ignore_index=True) if table_data else pd.DataFrame()
 
 # URL of the website to scrape
 url = 'http://bppnet/report/kpi/kpipdrw.aspx'
 
-# Make HTTP request to fetch the content from the website
-response = requests.get(url)
+try:
+    # Make HTTP request to fetch the content from the website
+    response = requests.get(url)
+    response.raise_for_status()
+    
+    # Detect encoding of the content
+    result = chardet.detect(response.content)
+    encoding = result['encoding']
+    response.encoding = encoding
 
-# Detect encoding of the content
-result = chardet.detect(response.content)
-encoding = result['encoding']
-response.encoding = encoding
+    # Parse HTML content using BeautifulSoup
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-# Parse HTML content using BeautifulSoup
-soup = BeautifulSoup(response.text, 'html.parser')
+except requests.RequestException as e:
+    logging.error(f"Error fetching the URL: {e}")
+    raise
 
 # Create output directory if it doesn't exist
 folder_Output = 'Output'
@@ -40,11 +53,7 @@ if not os.path.exists(folder_Output):
     os.makedirs(folder_Output)
 
 # List of table IDs to scrape
-table_ids = [
-    'MainContent_GridView1', 
-    'MainContent_GridView2', 
-    'MainContent_GridView5'
-]
+table_ids = ['MainContent_GridView1', 'MainContent_GridView2', 'MainContent_GridView5']
 
 # Collect data from each table
 df = get_table_data(soup, table_ids)
@@ -65,21 +74,58 @@ df['ปี'] = pd.to_numeric(df['ปี'], errors='coerce')
 # Fill NaN values with the current year and convert to integer
 df['ปี'] = df['ปี'].fillna(current_year).astype(int)
 
-# Create uniqueid by combining 'ปี' and 'รายการ'
-df['uniqueid'] = df.apply(lambda row: f"{row['ปี']}_{row['รายการ']}", axis=1)
+# Custom mapping of 'รายการ' to 'id'
+item_id_mapping = {
+    'การ Set Up เครื่อง/แม่พิมพ์ (MH)': 1,
+    'จากเครื่องจักรเสีย (MH)': 2,
+    'จากแม่พิมพ์เสีย (MH)': 3,
+    'จากการรอวัสดุ/อุปกรณ์ (MH)': 4,
+    'จากการไปผลิต/ทำงานอื่น (MH)': 5,
+    'อื่น ๆ (MH) (ที่นอกเหนือหัวข้อข้างต้น)': 6,
+    'MH ผลิตจริง (เฉพาะทีปิด)': 7,
+    '% ซ่อมสี:': 18,
+    'เวลาสูญเสียจากการผลิต ต้องไม่เกิน': 17,
+    'สาเหตุจากพนักงาน(ชิ้น)': 20,
+    'สาเหตุจากวัตถุดิบ(ชิ้น)': 21,
+    'วัตถุดิบเฉพาะ Dis 442/Com054 (ชิ้น)': 22,
+    'สาเหตุจากเครื่องจักร(ชิ้น)': 23,
+    'สาเหตุจากวิธีการ/ควบคุม(ชิ้น)': 24,
+    'สาเหตุจากแม่พิมพ์ (ชิ้น)': 25,
+    'แม่พิมพ์เฉพาะ (Dis 177,258/Com054) (ชิ้น)': 26,
+    'สาเหตุจากงานจ้างผลิตภายนอก (ชิ้น)': 27,
+    'สาเหตุจากการออกแบบ (ชิ้น)': 28,
+    'สาเหตุจากการซ่อมสี': 29,
+    'สาเหตุจากคำสั่งพิเศษ': 30,
+    'สาเหตุจากข้อร้องเรียนลูกค้า': 31,
+    'ยอดผลิตรวม(ชิ้น)': 99,
+    'จำนวนพ่นสีทั้งหมด': 100,
+    'จำนวนงานซ่อมสี': 101
+}
+
+# Ensure 'รายการ' column exists before proceeding
+if 'รายการ' in df.columns:
+    # Map 'รายการ' to 'id' using the provided mapping
+    df['id'] = df['รายการ'].map(item_id_mapping)
+
+    # Convert 'id' column to int (in case there are NaN values, they will be replaced with -1 or some default value)
+    df['id'] = df['id'].fillna(-1).astype(int)
+
+    # logging.info("Mapped 'รายการ' to 'id'.")
+else:
+    logging.warning("Column 'รายการ' not found in the data.")
 
 # Save the updated DataFrame to a new CSV file
 updated_file_name = 'Rework_Lost_Repair.csv'
 updated_file_path = os.path.join(folder_Output, updated_file_name)
 df.to_csv(updated_file_path, index=False, encoding='utf-8-sig')
 
-print(f"Year column updated to the current year and data saved to '{updated_file_path}'.")
+# logging.info(f"Data saved to '{updated_file_path}'.")
 
 # Read the CSV file into a DataFrame
 df = pd.read_csv(updated_file_path)
 
 # Rename columns
-df.rename(columns={
+rename_dict = {
     'ปี': 'yr',
     'รายการ': 'desc',
     'ม.ค.': 'm01',
@@ -94,9 +140,222 @@ df.rename(columns={
     'ต.ค.': 'm10',
     'พ.ย.': 'm11',
     'ธ.ค.': 'm12'
-}, inplace=True)
+}
 
-# Save the updated DataFrame back to a CSV file
-df.to_csv(updated_file_path, index=False,encoding='utf-8-sig')
+# Check if columns to rename exist
+if set(rename_dict.keys()).issubset(df.columns):
+    df.rename(columns=rename_dict, inplace=True)
+    df.to_csv(updated_file_path, index=False, encoding='utf-8-sig')
+    # logging.info(f"Columns renamed and data saved to '{updated_file_path}'.")
+else:
+    logging.warning("One or more columns to rename do not exist in the data.")
 
-print(f"Columns renamed and data saved to '{updated_file_path}'.")
+# ตรวจสอบว่ามี ID 17 อยู่ใน DataFrame หรือไม่
+special_id = 17
+if special_id not in df['id'].values:
+    # เพิ่มแถวใหม่สำหรับ ID 17
+    special_row = pd.DataFrame([{
+        'yr': 2024,
+        'desc': 'เวลาสูญเสียจากการผลิต ต้องไม่เกิน',
+        'm01': 0, 'm02': 0, 'm03': 0, 'm04': 0, 'm05': 0, 'm06': 0,
+        'm07': 0, 'm08': 0, 'm09': 0, 'm10': 0, 'm11': 0, 'm12': 0,
+        'id': special_id
+    }])
+    df = pd.concat([df, special_row], ignore_index=True)
+
+    # Sort DataFrame by 'id'
+    df = df.sort_values(by='id')
+
+    df.to_csv(updated_file_path, index=False, encoding='utf-8-sig')
+    # logging.info("เพิ่มแถวใหม่สำหรับ ID 17.")
+else:
+    logging.info("ID 17 มีอยู่ใน DataFrame แล้ว")
+
+
+# Load the CSV file
+df = pd.read_csv(updated_file_path)
+
+# Convert the 'm01' to 'm12' columns to numeric, coercing errors to NaN
+sum_columns = ['m01', 'm02', 'm03', 'm04', 'm05', 'm06', 'm07', 'm08', 'm09', 'm10', 'm11', 'm12']
+df[sum_columns] = df[sum_columns].replace(',', '', regex=True).apply(pd.to_numeric, errors='coerce')
+
+# Sum the values in 'm01' to 'm12' for rows with id 2 to 6
+sum_values = df[df['id'].isin([2, 3, 4, 5, 6])][sum_columns].sum()
+
+# Update only the row with id = 17
+df.loc[df['id'] == 17, sum_columns] = sum_values.values
+
+# Save the updated DataFrame back to the CSV file
+df.to_csv(updated_file_path, index=False, encoding='utf-8-sig')
+
+# print(f"Updated 'id = 17' with sums of columns {sum_columns}.")
+
+
+# Load the CSV file
+df = pd.read_csv(updated_file_path)
+
+# List of ids to process
+ids = [17, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+
+# Define the month columns
+months = ['m01', 'm02', 'm03', 'm04', 'm05', 'm06', 'm07', 'm08', 'm09', 'm10', 'm11', 'm12']
+
+# Identify the necessary rows (with checks)
+if not df[df['id'] == 7].empty and not df[df['id'] == 99].empty:
+    row_7 = df[df['id'] == 7].iloc[0]
+    row_99 = df[df['id'] == 99].iloc[0]
+    
+    # Ensure no division by zero
+    row_7_values = row_7[months].astype(float).replace(0, float('nan'))
+    row_99_values = row_99[months].astype(float).replace(0, float('nan'))
+
+    for id_val in ids:
+        if not df[df['id'] == id_val].empty:
+            row = df[df['id'] == id_val].iloc[0]
+            
+            # Choose different calculation for row_17 and others
+            if id_val == 17:
+                result = (row[months].astype(float) / row_7_values) * 100
+            else:
+                result = (row[months].astype(float) / row_99_values) * 1000000
+            
+            # Update the values in the DataFrame
+            df.loc[df['id'] == id_val, months] = result.values
+            
+            # print(f"Row with id={id_val} updated successfully!")
+        else:
+            print(f"Row with id={id_val} does not exist in the DataFrame.")
+    
+    # Create the new column 'activityid' by combining 'yr' and 'id'
+    df['activityid'] = df['yr'].astype(str) + df['id'].astype(str)
+
+    # Move 'activityid' to the first position
+    cols = ['activityid'] + [col for col in df.columns if col != 'activityid']
+    df = df[cols]
+
+    # Save the updated DataFrame back into the CSV
+    df.to_csv(updated_file_path, index=False, encoding='utf-8-sig')
+    print("All updates completed successfully!")
+else:
+    print("One or both of the rows with id=7 or id=99 are missing.")
+
+
+def try_float(value):
+    try:
+        return float(value.replace(',', '')) if value else None
+    except ValueError:
+        return None
+
+# กำหนดข้อมูลการเชื่อมต่อกับ SQL Server โดยใช้ Windows Authentication
+server = 'c259-003\SQLEXPRESS'
+database = 'KPI'
+
+# สร้างการเชื่อมต่อ
+conn_str = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
+conn = pyodbc.connect(conn_str)
+cursor = conn.cursor()
+
+# ชื่อไฟล์ CSV ที่ต้องการอ่าน
+input_file = r'F:\_BPP\Project\Scraping\Output\Rework_Lost_Repair.csv'
+
+# อ่านข้อมูลจากไฟล์ CSV
+with open(input_file, newline='', encoding='utf-8-sig') as csvfile:
+    # reader = csv.reader(csvfile)
+    # data = list(reader)
+    # อ่านข้อมูลจากไฟล์ CSV
+    df = pd.read_csv(input_file)
+
+# ตรวจสอบว่าตารางในฐานข้อมูลมีคอลัมน์ที่ตรงกันหรือไม่
+create_table_sql = """
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='ReworkLost' AND xtype='U')
+CREATE TABLE ReworkLost(
+    activityid INT PRIMARY KEY,
+    yr INT,
+    kpi_id INT,
+    [desc] NVARCHAR(MAX),
+    m01 FLOAT,
+    m02 FLOAT,
+    m03 FLOAT,
+    m04 FLOAT,
+    m05 FLOAT,
+    m06 FLOAT,
+    m07 FLOAT,
+    m08 FLOAT,
+    m09 FLOAT,
+    m10 FLOAT,
+    m11 FLOAT,
+    m12 FLOAT,
+    update_date DATETIME,
+    create_date DATETIME
+)
+"""
+
+cursor.execute(create_table_sql)
+conn.commit()
+
+# สร้างคำสั่ง SQL สำหรับการตรวจสอบว่า uniqueid มีอยู่หรือไม่
+check_sql = "SELECT COUNT(*) FROM ReworkLost WHERE activityid = ?"
+
+insert_sql = """
+INSERT INTO ReworkLost (activityid, yr, kpi_id, desc, m01, m02, m03, m04, m05, m06, m07, m08, m09, m10, m11, m12, create_date)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, Getdate())
+"""
+
+update_sql = """
+UPDATE ReworkLost
+SET yr = ?, kpi_id = ?, desc = ?, m01 = ?, m02 = ?, m03 = ?, m04 = ?, m05 = ?, m06 = ?, m07 = ?, m08 = ?, m09 = ?, m10 = ?, m11 = ?, m12 = ?, update_date = Getdate()
+WHERE activityid = ?
+"""
+
+
+for index, row in df.iterrows():
+    activityid = row['activityid']
+    cursor.execute(check_sql, activityid)
+    exists = cursor.fetchone()[0]
+
+    # If exists, update
+    if exists:
+        cursor.execute(update_sql, (
+            row['yr'],  # yr
+            row['kpi_id'],  # kpi_id
+            row['desc'],  # desc
+            try_float(row['m01']),
+            try_float(row['m02']),
+            try_float(row['m03']),
+            try_float(row['m04']),
+            try_float(row['m05']),
+            try_float(row['m06']),
+            try_float(row['m07']),
+            try_float(row['m08']),
+            try_float(row['m09']),
+            try_float(row['m10']),
+            try_float(row['m11']),
+            try_float(row['m12']),
+            activityid
+        ))
+    else:
+        cursor.execute(insert_sql, (
+            activityid,
+            row['yr'],
+            row['kpi_id'],
+            row['desc'],
+            try_float(row['m01']),
+            try_float(row['m02']),
+            try_float(row['m03']),
+            try_float(row['m04']),
+            try_float(row['m05']),
+            try_float(row['m06']),
+            try_float(row['m07']),
+            try_float(row['m08']),
+            try_float(row['m09']),
+            try_float(row['m10']),
+            try_float(row['m11']),
+            try_float(row['m12']),
+        ))
+
+conn.commit()
+cursor.close()
+conn.close()
+
+
+print("เพิ่มหรืออัปเดตข้อมูลเรียบร้อยแล้ว")
