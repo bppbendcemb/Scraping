@@ -239,6 +239,7 @@ if not df[df['id'] == 7].empty and not df[df['id'] == 99].empty:
 else:
     print("One or both of the rows with id=7 or id=99 are missing.")
 
+# __________________
 
 def try_float(value):
     try:
@@ -246,32 +247,24 @@ def try_float(value):
     except ValueError:
         return None
 
-# กำหนดข้อมูลการเชื่อมต่อกับ SQL Server โดยใช้ Windows Authentication
-server = 'c259-003\SQLEXPRESS'
+# Configure logging
+logging.basicConfig(filename='data_processing.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+server = 'c259-003\\SQLEXPRESS'
 database = 'KPI'
-
-# สร้างการเชื่อมต่อ
 conn_str = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
-conn = pyodbc.connect(conn_str)
-cursor = conn.cursor()
 
-# ชื่อไฟล์ CSV ที่ต้องการอ่าน
 input_file = r'F:\_BPP\Project\Scraping\Output\Rework_Lost_Repair.csv'
 
-# อ่านข้อมูลจากไฟล์ CSV
 with open(input_file, newline='', encoding='utf-8-sig') as csvfile:
-    # reader = csv.reader(csvfile)
-    # data = list(reader)
-    # อ่านข้อมูลจากไฟล์ CSV
-    df = pd.read_csv(input_file)
+    reader = csv.reader(csvfile)
+    data = list(reader)
 
-# ตรวจสอบว่าตารางในฐานข้อมูลมีคอลัมน์ที่ตรงกันหรือไม่
 create_table_sql = """
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='ReworkLost' AND xtype='U')
-CREATE TABLE ReworkLost(
+CREATE TABLE ReworkLost (
     activityid INT PRIMARY KEY,
     yr INT,
-    kpi_id INT,
     [desc] NVARCHAR(MAX),
     m01 FLOAT,
     m02 FLOAT,
@@ -285,77 +278,56 @@ CREATE TABLE ReworkLost(
     m10 FLOAT,
     m11 FLOAT,
     m12 FLOAT,
+    id INT,
     update_date DATETIME,
     create_date DATETIME
 )
 """
 
-cursor.execute(create_table_sql)
-conn.commit()
-
-# สร้างคำสั่ง SQL สำหรับการตรวจสอบว่า uniqueid มีอยู่หรือไม่
 check_sql = "SELECT COUNT(*) FROM ReworkLost WHERE activityid = ?"
+column_names = ['activityid', 'yr', '[desc]', 'm01', 'm02', 'm03', 'm04', 'm05', 'm06', 'm07', 'm08', 'm09', 'm10', 'm11', 'm12', 'id']
 
-insert_sql = """
-INSERT INTO ReworkLost (activityid, yr, kpi_id, desc, m01, m02, m03, m04, m05, m06, m07, m08, m09, m10, m11, m12, create_date)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, Getdate())
+insert_sql = f"""
+INSERT INTO ReworkLost ({', '.join(column_names)}, create_date)
+VALUES ({', '.join(['?'] * len(column_names))}, Getdate())
 """
 
 update_sql = """
 UPDATE ReworkLost
-SET yr = ?, kpi_id = ?, desc = ?, m01 = ?, m02 = ?, m03 = ?, m04 = ?, m05 = ?, m06 = ?, m07 = ?, m08 = ?, m09 = ?, m10 = ?, m11 = ?, m12 = ?, update_date = Getdate()
+SET yr = ?, [desc] = ?, m01 = ?, m02 = ?, m03 = ?, m04 = ?, m05 = ?, m06 = ?, m07 = ?, m08 = ?, m09 = ?, m10 = ?, m11 = ?, m12 = ?, id = ?, update_date = GETDATE()
 WHERE activityid = ?
 """
 
+try:
+    with pyodbc.connect(conn_str) as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(create_table_sql)
+            conn.commit()
 
-for index, row in df.iterrows():
-    activityid = row['activityid']
-    cursor.execute(check_sql, activityid)
-    exists = cursor.fetchone()[0]
+            for row in data[1:]:
+                if len(row) < 17:
+                    logging.warning(f"Skipping row due to insufficient columns: {row}")
+                    row.extend([None] * (17 - len(row)))  # Fill missing columns with None
 
-    # If exists, update
-    if exists:
-        cursor.execute(update_sql, (
-            row['yr'],  # yr
-            row['kpi_id'],  # kpi_id
-            row['desc'],  # desc
-            try_float(row['m01']),
-            try_float(row['m02']),
-            try_float(row['m03']),
-            try_float(row['m04']),
-            try_float(row['m05']),
-            try_float(row['m06']),
-            try_float(row['m07']),
-            try_float(row['m08']),
-            try_float(row['m09']),
-            try_float(row['m10']),
-            try_float(row['m11']),
-            try_float(row['m12']),
-            activityid
-        ))
-    else:
-        cursor.execute(insert_sql, (
-            activityid,
-            row['yr'],
-            row['kpi_id'],
-            row['desc'],
-            try_float(row['m01']),
-            try_float(row['m02']),
-            try_float(row['m03']),
-            try_float(row['m04']),
-            try_float(row['m05']),
-            try_float(row['m06']),
-            try_float(row['m07']),
-            try_float(row['m08']),
-            try_float(row['m09']),
-            try_float(row['m10']),
-            try_float(row['m11']),
-            try_float(row['m12']),
-        ))
+                uniqueid = row[0]
+                cursor.execute(check_sql, uniqueid)
+                exists = cursor.fetchone()[0]
 
-conn.commit()
-cursor.close()
-conn.close()
+                if exists:
+                    cursor.execute(update_sql, (
+                        row[1], row[2], try_float(row[3]), try_float(row[4]), try_float(row[5]), try_float(row[6]),
+                        try_float(row[7]), try_float(row[8]), try_float(row[9]), try_float(row[10]), try_float(row[11]),
+                        try_float(row[12]), try_float(row[13]), try_float(row[14]), row[15], uniqueid
+                    ))
+                else:
+                    cursor.execute(insert_sql, (
+                        uniqueid, row[1], row[2], try_float(row[3]), try_float(row[4]), try_float(row[5]), try_float(row[6]),
+                        try_float(row[7]), try_float(row[8]), try_float(row[9]), try_float(row[10]), try_float(row[11]),
+                        try_float(row[12]), try_float(row[13]), try_float(row[14]), row[15]
+                    ))
 
-
-print("เพิ่มหรืออัปเดตข้อมูลเรียบร้อยแล้ว")
+            conn.commit()
+    print("เพิ่มหรืออัปเดตข้อมูลเรียบร้อยแล้ว")
+except pyodbc.Error as e:
+    logging.error(f"Database error: {e}")
+    print(f"Database error: {e}")
