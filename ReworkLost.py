@@ -48,7 +48,7 @@ except requests.RequestException as e:
     raise
 
 # Create output directory if it doesn't exist
-folder_Output = 'Output'
+folder_Output = 'step1\Output'
 if not os.path.exists(folder_Output):
     os.makedirs(folder_Output)
 
@@ -115,7 +115,7 @@ else:
     logging.warning("Column 'รายการ' not found in the data.")
 
 # Save the updated DataFrame to a new CSV file
-updated_file_name = 'Rework_Lost_Repair.csv'
+updated_file_name = 'ReworkLost.csv'
 updated_file_path = os.path.join(folder_Output, updated_file_name)
 df.to_csv(updated_file_path, index=False, encoding='utf-8-sig')
 
@@ -248,13 +248,13 @@ def try_float(value):
         return None
 
 # Configure logging
-logging.basicConfig(filename='data_processing.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# logging.basicConfig(filename='data_processing.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 server = 'c259-003\\SQLEXPRESS'
 database = 'KPI'
 conn_str = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
 
-input_file = r'F:\_BPP\Project\Scraping\Output\Rework_Lost_Repair.csv'
+input_file = r'F:\_BPP\Project\Scraping\step1\Output\ReworkLost.csv'
 
 with open(input_file, newline='', encoding='utf-8-sig') as csvfile:
     reader = csv.reader(csvfile)
@@ -265,6 +265,7 @@ IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='ReworkLost' AND xtype='U')
 CREATE TABLE ReworkLost (
     activityid INT PRIMARY KEY,
     yr INT,
+    id INT,
     [desc] NVARCHAR(MAX),
     m01 FLOAT,
     m02 FLOAT,
@@ -278,14 +279,13 @@ CREATE TABLE ReworkLost (
     m10 FLOAT,
     m11 FLOAT,
     m12 FLOAT,
-    id INT,
     update_date DATETIME,
     create_date DATETIME
 )
 """
 
 check_sql = "SELECT COUNT(*) FROM ReworkLost WHERE activityid = ?"
-column_names = ['activityid', 'yr', '[desc]', 'm01', 'm02', 'm03', 'm04', 'm05', 'm06', 'm07', 'm08', 'm09', 'm10', 'm11', 'm12', 'id']
+column_names = ['activityid', 'yr', 'id', '[desc]', 'm01', 'm02', 'm03', 'm04', 'm05', 'm06', 'm07', 'm08', 'm09', 'm10', 'm11', 'm12']
 
 insert_sql = f"""
 INSERT INTO ReworkLost ({', '.join(column_names)}, create_date)
@@ -294,7 +294,7 @@ VALUES ({', '.join(['?'] * len(column_names))}, Getdate())
 
 update_sql = """
 UPDATE ReworkLost
-SET yr = ?, [desc] = ?, m01 = ?, m02 = ?, m03 = ?, m04 = ?, m05 = ?, m06 = ?, m07 = ?, m08 = ?, m09 = ?, m10 = ?, m11 = ?, m12 = ?, id = ?, update_date = GETDATE()
+SET yr = ?, id = ?, [desc] = ?, m01 = ?, m02 = ?, m03 = ?, m04 = ?, m05 = ?, m06 = ?, m07 = ?, m08 = ?, m09 = ?, m10 = ?, m11 = ?, m12 = ?, update_date = GETDATE()
 WHERE activityid = ?
 """
 
@@ -306,24 +306,50 @@ try:
 
             for row in data[1:]:
                 if len(row) < 17:
-                    logging.warning(f"Skipping row due to insufficient columns: {row}")
+                    # logging.warning(f"Skipping row due to insufficient columns: {row}")
                     row.extend([None] * (17 - len(row)))  # Fill missing columns with None
 
                 uniqueid = row[0]
                 cursor.execute(check_sql, uniqueid)
                 exists = cursor.fetchone()[0]
-
+# activityid,yr,desc,m01,m02,m03,m04,m05,m06,m07,m08,m09,m10,m11,m12,id
                 if exists:
                     cursor.execute(update_sql, (
-                        row[1], row[2], try_float(row[3]), try_float(row[4]), try_float(row[5]), try_float(row[6]),
-                        try_float(row[7]), try_float(row[8]), try_float(row[9]), try_float(row[10]), try_float(row[11]),
-                        try_float(row[12]), try_float(row[13]), try_float(row[14]), row[15], uniqueid
+                        row[1],
+                        row[15], 
+                        row[2],         
+                        try_float(row[3]),  
+                        try_float(row[4]), 
+                        try_float(row[5]), 
+                        try_float(row[6]),
+                        try_float(row[7]), 
+                        try_float(row[8]), 
+                        try_float(row[9]), 
+                        try_float(row[10]), 
+                        try_float(row[11]),
+                        try_float(row[12]), 
+                        try_float(row[13]), 
+                        try_float(row[14]),                       
+                        uniqueid
                     ))
                 else:
                     cursor.execute(insert_sql, (
-                        uniqueid, row[1], row[2], try_float(row[3]), try_float(row[4]), try_float(row[5]), try_float(row[6]),
-                        try_float(row[7]), try_float(row[8]), try_float(row[9]), try_float(row[10]), try_float(row[11]),
-                        try_float(row[12]), try_float(row[13]), try_float(row[14]), row[15]
+                        uniqueid, 
+                        row[1],
+                        row[15], 
+                        row[2],
+                        try_float(row[3]),                       
+                        try_float(row[4]), 
+                        try_float(row[5]), 
+                        try_float(row[6]),
+                        try_float(row[7]), 
+                        try_float(row[8]), 
+                        try_float(row[9]), 
+                        try_float(row[10]), 
+                        try_float(row[11]),
+                        try_float(row[12]), 
+                        try_float(row[13]), 
+                        try_float(row[14]),                                  
                     ))
 
             conn.commit()
