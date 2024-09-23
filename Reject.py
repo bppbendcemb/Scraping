@@ -22,25 +22,33 @@ if response.status_code == 200:
         if not os.path.exists(folder_Output):
             os.makedirs(folder_Output)
 
-        file_path = os.path.join(folder_Output, 'Reject.csv')
+        file_path = os.path.join(folder_Output, 'Reject1.csv')
         with open(file_path, 'w', newline='', encoding='utf-8-sig') as file:
            writer = csv.writer(file)
            writer.writerow(headers)
            writer.writerows(rows)
-        print("บันทึกไฟล์ชื่อ : Reject.csv")
+        print("บันทึกไฟล์ชื่อ : Reject1.csv")
     else:
         print("No This Table")
 else:
     print(f"เข้าไม่ได้ : {response.status_code}")       
 #______________________________________________________
 
-df = pd.read_csv(f'F:\_BPP\Project\Scraping\step1\Output\Reject.csv')
+# Processing the CSV files using pandas
+input_file = os.path.join(folder_Output, 'Reject1.csv')
+output_file = os.path.join(folder_Output, 'Reject2.csv')
+# input_deliver = os.path.join(folder_Output, 'Deliver2.csv')
 
-# แปลงคอลัมน์ 'วันที่เอกสาร' ให้เป็นรูปแบบ datetime
+# Read the CSV files
+df = pd.read_csv(input_file)
+# df_deliver = pd.read_csv(input_deliver)
+
+# Convert 'วันที่เอกสาร' column to datetime format in Reject DataFrame
 df['วันที่เอกสาร'] = pd.to_datetime(df['วันที่เอกสาร'], format='%d/%m/%Y')
-# Group by เดือนและหาผลรวมของ Reject
-monthly_reject = df.groupby(df['วันที่เอกสาร'].dt.month)['Reject'].sum()
-print(monthly_reject)
+
+# Clean and convert 'Reject' column from text to numbers
+df['Reject'] = df['Reject'].astype(str).str.replace(',', '').str.strip()
+df['Reject'] = pd.to_numeric(df['Reject'], errors='coerce')
 
 
-df.to_csv(monthly_reject, index=False, encoding='utf-8-sig')
+df.to_csv(output_file, encoding='utf-8-sig')

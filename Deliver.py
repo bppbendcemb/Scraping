@@ -42,6 +42,10 @@ else:
 updated_file_name = 'Deliver1.csv'
 updated_file_path = os.path.join(folder_Output, updated_file_name)
 df = pd.read_csv(updated_file_path)
+
+#ปี,เดือน,จำนวนรายการ,จำนวนชิ้นงาน
+df['จำนวนชิ้นงาน'] = df['จำนวนชิ้นงาน'].str.replace(',', '').astype(int)
+
 # Rename columns
 rename_dict = {
     'ปี': 'yr',
@@ -49,7 +53,7 @@ rename_dict = {
     'จำนวนรายการ': 'items',
     'จำนวนชิ้นงาน': 'pieces'
 }
-#ปี,เดือน,จำนวนรายการ,จำนวนชิ้นงาน
+
 
 # Check if columns to rename exist
 if set(rename_dict.keys()).issubset(df.columns):
@@ -72,6 +76,7 @@ yr = df['yr'].iloc[0]
 items_df = df.pivot(index='yr', columns='m', values='items')
 pieces_df = df.pivot(index='yr', columns='m', values='pieces')
 
+
 # Reindex to ensure months 1 to 12 are present
 months = list(range(1, 13))
 items_df = items_df.reindex(columns=months, fill_value=np.nan)
@@ -82,16 +87,19 @@ items_df = items_df.astype(object)
 pieces_df = pieces_df.astype(object)
 
 # Replace NaN with #N/A
-items_df.fillna('#N/A', inplace=True)
-pieces_df.fillna('#N/A', inplace=True)
+# items_df.fillna('#N/A', inplace=True)
+# pieces_df.fillna('#N/A', inplace=True)
+
+items_df.fillna('None', inplace=True)
+pieces_df.fillna('None', inplace=True)
 
 # Add additional columns for activityid and genre
-items_df.insert(0, 'uniqueid', 2024501)
+items_df.insert(0, 'uniqueid', str(yr) + str(501))
 items_df.insert(1, 'yr', yr)
 items_df.insert(2, 'kpi_id', 501)
 items_df.insert(3, 'genre', 'จำนวนรายการ')
 
-pieces_df.insert(0, 'uniqueid', 202450)
+pieces_df.insert(0, 'uniqueid',  str(yr) + str(50))
 pieces_df.insert(1, 'yr', yr)
 pieces_df.insert(2, 'kpi_id', 50)
 pieces_df.insert(3, 'genre', 'จำนวนชิ้นงาน')
@@ -190,11 +198,19 @@ SET yr = ?, kpi_id = ?, genre = ?, m01 = ?, m02 = ?, m03 = ?, m04 = ?, m05 = ?, 
 WHERE uniqueid = ?
 """
 
+
 def try_float(value):
     try:
         return float(value.replace(',', '')) if value else None
     except ValueError:
         return None
+
+# ฟังก์ชันเติมค่าเริ่มต้นถ้าไม่มีข้อมูล
+def fill_missing_values(row):
+    for i in range(4, 15):  # คอลัมน์ m01 ถึง m12
+        if row[i] == '' or pd.isna(row[i]):
+            row[i] = None  # เปลี่ยนค่าเป็น None หรือ '#N/A' หรือ '0' ตามที่ต้องการ
+    return row    
 
 try:
     with pyodbc.connect(conn_str) as conn:
