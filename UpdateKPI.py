@@ -85,6 +85,30 @@ JOIN [dbo].[Reject] A ON A.uniqueid = B.unique_id
 WHERE B.kpi_id = 10;
 """
 
+query_update_CustFeedbackRequest = """
+UPDATE B
+SET
+    B.[kpi_id] = A.kpi_id,
+    B.[yr] = A.[yr],
+    B.[m01] = A.[m01],
+    B.[m02] = A.[m02],
+    B.[m03] = A.[m03],
+    B.[m04] = A.[m04],
+    B.[m05] = A.[m05],
+    B.[m06] = A.[m06],
+    B.[m07] = A.[m07],
+    B.[m08] = A.[m08],
+    B.[m09] = A.[m09],
+    B.[m10] = A.[m10],
+    B.[m11] = A.[m11],
+    B.[m12] = A.[m12],
+    B.[update_date] = GETDATE()
+FROM [KPI_dtl] B
+JOIN [dbo].[CustFeedbackRequest] A 
+ON A.uniqueid = B.unique_id
+WHERE B.kpi_id in (77, 78);
+"""
+
 query_update_total_average = """
 UPDATE [KPI].[dbo].[KPI_dtl]
 SET 
@@ -143,3 +167,4 @@ execute_query(query_update_rework)
 execute_query(query_update_deliver)
 execute_query(query_update_reject)
 execute_query(query_update_total_average)
+execute_query(query_update_CustFeedbackRequest)
