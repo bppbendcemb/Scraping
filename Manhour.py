@@ -6,6 +6,10 @@ import time
 from datetime import datetime, timedelta
 import csv
 import os
+import requests
+import pandas as pd
+import logging
+import pyodbc
 
 # กำหนด path ไปที่ WebDriver ของเบราว์เซอร์ (เช่น ChromeDriver)
 driver_path = 'C:/chromedriver/chromedriver.exe'
@@ -74,11 +78,11 @@ if table:
     month = first_day_of_last_month.strftime('%m')
     year = first_day_of_last_month.strftime('%Y')
     
-    folder_Output = 'Output'
+    folder_Output = 'step1\Output'
     if not os.path.exists(folder_Output):
         os.makedirs(folder_Output)
 
-    file_path = os.path.join(folder_Output, 'KPI_Manhour.csv')
+    file_path = os.path.join(folder_Output, 'Manhour1.csv')
 
     # บันทึกข้อมูลลงในไฟล์ CSV
     with open(file_path, 'w', newline='', encoding='utf-8-sig') as file:
@@ -91,9 +95,20 @@ if table:
                 row_data = [month, year] + [col.text.strip() for col in cols]
                 writer.writerow(row_data)
     
-    print("ข้อมูลถูกบันทึกลงในไฟล์ KPI_Manhour.csv")
+    print("ข้อมูลถูกบันทึกลงในไฟล์ : Manhour1.csv")
 else:
     print("ไม่พบตาราง")
 
 # ปิดเบราว์เซอร์เมื่อทำเสร็จ
 driver.quit()
+
+#-------------------------------------------------------
+# เดือน,ปี,ประเภท,จำนวน(คน),ชม.ทำงานปกติ,OT
+# 08,2024,ปฏิบัติการ,112,"18,854.00","1,210.00"
+# 08,2024,สนับสนุน,80,"11,408.00",364.50
+
+input_file = os.path.join(folder_Output, 'Manhour1.csv')
+output_file = os.path.join(folder_Output, 'Manhour2.csv')
+
+df = pd.read_csv(input_file)
+
