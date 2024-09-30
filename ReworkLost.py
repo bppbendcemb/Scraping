@@ -53,7 +53,9 @@ if not os.path.exists(folder_Output):
     os.makedirs(folder_Output)
 
 # List of table IDs to scrape
-table_ids = ['MainContent_GridView1', 'MainContent_GridView2', 'MainContent_GridView5']
+table_ids = ['ctl00_MainContent_GridView1', 'ctl00_MainContent_GridView2', 'ctl00_MainContent_GridView5']
+
+# ctl00_MainContent_GridView1
 
 # Collect data from each table
 df = get_table_data(soup, table_ids)

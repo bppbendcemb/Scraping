@@ -14,7 +14,8 @@ url = f'http://bppnet/qm/report/ccrlst.aspx?ktype=yr&key={current_year}'
 response = requests.get(url)
 if response.status_code == 200:
     soup = BeautifulSoup(response.content, 'html.parser')
-    table = soup.find('table',{'id':'MainContent_datagrid1'})
+    table = soup.find('table',{'id':'ctl00_MainContent_datagrid1'})  # ctl00_MainContent_datagrid1
+   
     if table:
         headers = [header.text.strip() for header in table.find_all('th')]
         rows = []

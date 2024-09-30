@@ -37,9 +37,10 @@ print("วันที่ 1 ของเดือนที่แล้ว:", fir
 print("วันสุดท้ายของเดือนที่แล้ว:", last_day_of_last_month.strftime('%m/%d/%Y'))
 
 # ใช้ JavaScript เปลี่ยนค่าใน <input>
+# ctl00_MainContent_TextYR
 script = f"""
-    document.getElementById('MainContent_TextYR').value = '{first_day_of_last_month.strftime('%m/%d/%Y')}';
-    document.getElementById('MainContent_TextYR0').value = '{last_day_of_last_month.strftime('%m/%d/%Y')}';
+    document.getElementById('ctl00_MainContent_TextYR').value = '{first_day_of_last_month.strftime('%m/%d/%Y')}'; 
+    document.getElementById('ctl00_MainContent_TextYR0').value = '{last_day_of_last_month.strftime('%m/%d/%Y')}';
 """
 driver.execute_script(script)
 
@@ -48,7 +49,7 @@ driver.execute_script(script)
 # ปรับเวลาให้เหมาะสม
 
 # ค้นหาปุ่ม "ดูข้อมูล" และคลิกมัน
-submit_button = driver.find_element(By.ID, 'MainContent_Button1')
+submit_button = driver.find_element(By.ID, 'ctl00_MainContent_Button1')
 submit_button.click()
 
 # รอให้หน้าเว็บโหลดข้อมูลใหม่หลังจากการคลิกปุ่ม
@@ -62,7 +63,7 @@ page_html = driver.page_source
 soup = BeautifulSoup(page_html, 'html.parser')
 
 # ดึงข้อมูลจาก table
-table = soup.find('table', {'id': 'MainContent_GridView1'})  # ปรับให้ตรงกับโครงสร้างเว็บ
+table = soup.find('table', {'id': 'ctl00_MainContent_GridView1'})  # ปรับให้ตรงกับโครงสร้างเว็บ
 if table:
     # ดึง headers
     headers = [header.text.strip() for header in table.find_all('th')]
@@ -108,7 +109,4 @@ driver.quit()
 # 08,2024,สนับสนุน,80,"11,408.00",364.50
 
 input_file = os.path.join(folder_Output, 'Manhour1.csv')
-output_file = os.path.join(folder_Output, 'Manhour2.csv')
-
-df = pd.read_csv(input_file)
 

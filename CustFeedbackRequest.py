@@ -13,7 +13,7 @@ response = requests.get(url)
 
 if response.status_code == 200:
     soup = BeautifulSoup(response.content, 'html.parser')
-    table = soup.find('table', {'id': 'MainContent_GridView1'})
+    table = soup.find('table', {'id': 'ctl00_MainContent_GridView1'}) # ctl00_MainContent_GridView1
     
     if table:
         headers = [header.text.strip() for header in table.find_all('th')]
