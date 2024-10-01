@@ -109,6 +109,30 @@ ON A.uniqueid = B.unique_id
 WHERE B.kpi_id in (77, 78);
 """
 
+query_update_manhour = """
+UPDATE B
+SET
+    B.[kpi_id] = A.kpi_id,
+    B.[yr] = A.[yr],
+    B.[m01] = A.[m01],
+    B.[m02] = A.[m02],
+    B.[m03] = A.[m03],
+    B.[m04] = A.[m04],
+    B.[m05] = A.[m05],
+    B.[m06] = A.[m06],
+    B.[m07] = A.[m07],
+    B.[m08] = A.[m08],
+    B.[m09] = A.[m09],
+    B.[m10] = A.[m10],
+    B.[m11] = A.[m11],
+    B.[m12] = A.[m12],
+    B.[update_date] = GETDATE()
+FROM [KPI_dtl] B
+JOIN [dbo].[Manhour] A 
+ON A.uniqueid = B.unique_id
+WHERE B.kpi_id in (84, 85, 86, 87, 88, 89, 90);
+"""
+
 query_update_total_average = """
 UPDATE [KPI].[dbo].[KPI_dtl]
 SET 
@@ -150,21 +174,26 @@ SET
 
 """
 
-# Function to execute SQL queries
-def execute_query(query):
+def execute_query(query_name, query):
     try:
         with pyodbc.connect(constr) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(query)
                 conn.commit()
-                print("Query executed successfully.")
+        print(f"Query '{query_name}' executed successfully.")
     except Exception as e:
-        print("An error occurred:", e)
+        print(f"An error occurred while executing '{query_name}': {e}")
 
-# Execute the queries
-execute_query(query_backup)
-execute_query(query_update_rework)
-execute_query(query_update_deliver)
-execute_query(query_update_reject)
-execute_query(query_update_total_average)
-execute_query(query_update_CustFeedbackRequest)
+# Execute multiple queries with names
+queries = [
+    ("Backup Query", query_backup),
+    ("Update Rework Query", query_update_rework),
+    ("Update Deliver Query", query_update_deliver),
+    ("Update Reject Query", query_update_reject),
+    ("Update Manhour Query", query_update_manhour),
+    ("Update Customer Feedback Request Query", query_update_CustFeedbackRequest),
+    ("Update Total Average Query", query_update_total_average)
+]
+
+for query_name, query in queries:
+    execute_query(query_name, query)

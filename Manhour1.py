@@ -11,6 +11,9 @@ import pandas as pd
 import logging
 import pyodbc
 
+# step1 Scraping ข้อมูลจาก 'http://bppnet/report/pd/bppmh.aspx' แล้วบันทึกเป็น csv
+
+
 # กำหนด path ไปที่ WebDriver ของเบราว์เซอร์ (เช่น ChromeDriver)
 driver_path = 'C:/chromedriver/chromedriver.exe'
 service = ChromeService(executable_path=driver_path)

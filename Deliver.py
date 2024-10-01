@@ -7,7 +7,6 @@ import pyodbc
 import pandas as pd
 import numpy as np
 
-
 url = 'http://bppnet/report/whiss.aspx'
 response = requests.get(url)
 if response.status_code == 200:
