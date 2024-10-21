@@ -62,7 +62,6 @@ if set(rename_dict.keys()).issubset(df.columns):
 else:
     logging.warning("One or more columns to rename do not exist in the data.")
 
-    
 # ***************************
 
 # Load the data from the CSV file

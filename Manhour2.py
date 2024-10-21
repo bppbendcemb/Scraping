@@ -70,7 +70,7 @@ data = {
         df.iloc[1]['count_peple'], 
         df.iloc[1]['normalworkinghours'], 
         df.iloc[1]['OT'],
-        df.iloc[0]['normalworkinghours'] + df.iloc[0]['OT'] + df.iloc[1]['normalworkinghours'] + df.iloc[1]['OT'],
+        df.iloc[0]['normalworkinghours'] + df.iloc[0]['OT'] + df.iloc[1]['normalworkinghours'] + df.iloc[1]['OT'], #ผลรวมของ 85,86,88,89
     ]
 }
 

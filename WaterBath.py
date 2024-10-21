@@ -25,13 +25,13 @@ if response.status_code == 200:
         if not os.path.exists(folder_Output):
             os.makedirs(folder_Output)
 
-        file_path = os.path.join(folder_Output, 'Water.csv')    
+        file_path = os.path.join(folder_Output, 'WaterBath.csv')    
 
         with open(file_path, 'w', newline='', encoding='utf-8-sig') as file:
             writer = csv.writer(file)
             writer.writerow(headers)
             writer.writerows(rows)
-        print("Save To : Water.csv")
+        print("Save To : WaterBath.csv")
     else:
         print("No Table")
 else:
@@ -42,7 +42,7 @@ else:
 # df = pd.read_csv(file_path)
 
 # ดึงค่า น้ำหนักชิ้นงานพ่นสี(ตัน) จากคอลัมน์
-water_values = df['หน่วยที่ใช้(ยูนิต)'].tolist()
+water_values = df['ค่าน้ำ(บาท)'].tolist()
 
 # แปลงค่าเป็น float และกรองค่าว่าง
 water_values = [
@@ -59,7 +59,7 @@ months = ['m01', 'm02', 'm03', 'm04', 'm05', 'm06', 'm07', 'm08', 'm09', 'm10', 
 water_df = pd.DataFrame(columns=['uniqueid', 'yr', 'kpi_id'] + months) 
 
 # เพิ่มข้อมูลลงใน DataFrame ใหม่
-kpi_id = 72  # ค่า kpi_id คงที่
+kpi_id = 73  # ค่า kpi_id คงที่
 
 uniqueid = str(current_year) + str(kpi_id)  # สร้าง uniqueid
 
@@ -82,7 +82,7 @@ if not os.path.exists(folder_Output):
     os.makedirs(folder_Output)
 
 # สร้างเส้นทางสำหรับไฟล์ CSV
-file_path = os.path.join(folder_Output, 'Water2.csv')    
+file_path = os.path.join(folder_Output, 'WaterBath2.csv')    
 
 # บันทึก DataFrame ลงในไฟล์ CSV
 water_df.to_csv(file_path, index=False)
@@ -136,7 +136,7 @@ for index, row in water_df.iterrows():
         INSERT INTO KPI_dtl (unique_id, yr, kpi_id, m01, m02, m03, m04, m05, m06, m07, m08, m09, m10, m11, m12, create_date)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE())
         """
-        cursor.execute(sql, row['uniqueid'], row['yr'], 72,  # เปลี่ยน row['id'] เป็น 70
+        cursor.execute(sql, row['uniqueid'], row['yr'], 73,  # เปลี่ยน row['id'] เป็น 70
                        row['m01'], row['m02'], row['m03'], row['m04'], 
                        row['m05'], row['m06'], row['m07'], row['m08'], 
                        row['m09'], row['m10'], row['m11'], row['m12'])

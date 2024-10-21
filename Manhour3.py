@@ -51,13 +51,6 @@ insert_sql = f"""
 INSERT INTO Manhour ({', '.join(column_names)}, create_date)
 VALUES ({', '.join(['?'] * len(column_names))}, Getdate())
 """
-
-# update_sql = """
-# UPDATE Manhour
-# SET yr = ?, kpi_id = ?,  m01 = ?, m02 = ?, m03 = ?, m04 = ?, m05 = ?, m06 = ?, m07 = ?, m08 = ?, m09 = ?, m10 = ?, m11 = ?, m12 = ?, update_date = GETDATE()
-# WHERE uniqueid = ?
-# """
-
 # Create a mapping for month numbers to column names
 month_columns = {
     '01': 'm01',
