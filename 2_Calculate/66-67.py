@@ -19,8 +19,8 @@ df.rename(columns={'เดือน': 'm', 'ปี': 'yr', 'KWH': '66', 'จำ�
 df.columns = df.columns.str.strip()
 
 # Check the columns and the first few rows of the DataFrame
-print(df.columns)  # Check the column names
-print(df.head())   # Check the first few rows to ensure correct loading
+# print(df.columns)  # Check the column names
+# print(df.head())   # Check the first few rows to ensure correct loading
 
 # Define a mapping for month names to codes
 month_mapping = {
@@ -42,7 +42,7 @@ month_mapping = {
 df['m'] = df['m'].map(month_mapping)
 
 # Print the DataFrame to verify month mapping
-print(df[['m', 'yr']])  # Check mapped month values and years
+# print(df[['m', 'yr']])  # Check mapped month values and years
 
 # Reorder columns
 columns_order = ['yr', 'm', '66', '67']  # Use strings for column names
@@ -69,19 +69,18 @@ df_67 = df.pivot(index='yr', columns='m', values='67')
 
 df_66['kpi_id'] = 66
 df_67['kpi_id'] = 67
-# ------------------------------------------------------------------------------
+# Combine the two DataFrames
+combined_df = pd.concat([df_66, df_67], ignore_index=True)
+# ------------------------------------------------------------------------------ 
 # Output file path
 output_dir = r'F:\_BPP\Project\Scraping\2_Calculate\CSV'
-output_path_66 = os.path.join(output_dir, '66-filled.csv')  # Change filename if needed
-output_path_67 = os.path.join(output_dir, '67-filled.csv')
+output_path_combined = os.path.join(output_dir, '66-67-combined.csv')  # Change filename if needed
+
 # Create the directory if it does not exist
 os.makedirs(output_dir, exist_ok=True)
 
-# Save the modified DataFrame to CSV
-# df.to_csv(output_path, index=False)
-df_66.to_csv(output_path_66, index=False)
-df_67.to_csv(output_path_67, index=False)
+# Save the reshaped DataFrame to CSV
+combined_df.to_csv(output_path_combined, index=False)
 
-# Print the final DataFrame
-print(df_66)
-print(df_67)
+# Print the final reshaped DataFrame
+print(combined_df)
