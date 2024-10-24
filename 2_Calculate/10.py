@@ -85,7 +85,7 @@ else:
     print("One or more columns to rename do not exist in all_months")
 
 df_Reject = all_months
-df_Reject.to_csv('10XX.csv', index=False)
+# df_Reject.to_csv('10XX.csv', index=False)
 
 # --------------------------------------------------------------------------------------------------------------
 # 10.Reject Calculate2
