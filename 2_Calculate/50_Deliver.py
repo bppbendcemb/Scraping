@@ -6,7 +6,8 @@ import os  # For creating directories
 logging.basicConfig(level=logging.WARNING)
 
 # Input file path
-Input_path = r'F:\_BPP\Project\Scraping\CSV\50_Deliver.csv'
+Input_path = r'F:\_BPP\Project\Scraping\1_Scraping\CSV\50_Deliver.csv'
+
 
 # Read the CSV
 df = pd.read_csv(Input_path)

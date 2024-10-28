@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 
 # Load the CSV file
-df = pd.read_csv(r'F:\_BPP\Project\Scraping\1_Scraping\CSV\66-67.csv')
+df = pd.read_csv(r'F:\_BPP\Project\Scraping\1_Scraping\CSV\72-73.csv')
 
 # Get the current year
 current_year = datetime.now().year
@@ -13,7 +13,7 @@ current_year = datetime.now().year
 df[['เดือน', 'ปี']] = df['เดือน'].str.extract(r'(.+?)\s(\d{4})')
 
 # Rename columns to English
-df.rename(columns={'เดือน': 'm', 'ปี': 'yr', 'KWH': '66', 'จำนวนเงิน': '67'}, inplace=True)
+df.rename(columns={'เดือน': 'm', 'ปี': 'yr', 'หน่วยที่ใช้(ยูนิต)': '72', 'ค่าน้ำ(บาท)': '73'}, inplace=True)
 
 # Strip whitespace from column names
 df.columns = df.columns.str.strip()
@@ -45,12 +45,12 @@ df['m'] = df['m'].map(month_mapping)
 # print(df[['m', 'yr']])  # Check mapped month values and years
 
 # Reorder columns
-columns_order = ['yr', 'm', '66', '67']  # Use strings for column names
+columns_order = ['yr', 'm', '72', '73']  # Use strings for column names
 df = df[columns_order]
 
 # Convert KWH and amount to numbers by removing commas and converting to float
-df['66'] = df['66'].str.replace(',', '', regex=False).astype(float)
-df['67'] = df['67'].str.replace(',', '', regex=False).astype(float)
+df['72'] = df['72'].str.replace(',', '', regex=False).astype(float)
+df['73'] = df['73'].str.replace(',', '', regex=False).astype(float)
 
 # Convert year from Buddhist calendar (2567) to Gregorian calendar (2024)
 df['yr'] = pd.to_numeric(df['yr'], errors='coerce')  # Convert to numeric, handle NaN
@@ -60,18 +60,18 @@ df['yr'] = df['yr'].astype(int)  # Convert year to integer to remove .0
 
 # ------------------------------------------------------------------------------
 # Fill NaN values in the '66' and '67' columns with 0 without using inplace
-df['66'] = df['66'].fillna(0)
-df['67'] = df['67'].fillna(0)
+df['72'] = df['72'].fillna(0)
+df['73'] = df['73'].fillna(0)
 
 
 # Pivot the data for '66'
-df_66 = df.pivot(index='yr', columns='m', values='66')
-df_67 = df.pivot(index='yr', columns='m', values='67')
+df_72 = df.pivot(index='yr', columns='m', values='72')
+df_73 = df.pivot(index='yr', columns='m', values='73')
 
-df_66['kpi_id'] = 66
-df_67['kpi_id'] = 67
+df_72['kpi_id'] = 72
+df_73['kpi_id'] = 73
 # Combine the two DataFrames
-df = pd.concat([df_66, df_67], ignore_index=True)
+df = pd.concat([df_72, df_73], ignore_index=True)
 
 df['uniqueid'] = (str(current_year) + df['kpi_id'].astype(str)).astype(int)
 df['yr'] = current_year
@@ -79,7 +79,7 @@ df['yr'] = current_year
 # ------------------------------------------------------------------------------ 
 # Output file path
 output_dir = r'F:\_BPP\Project\Scraping\2_Calculate\CSV'
-output_path_combined = os.path.join(output_dir, '66-67.csv')  # Change filename if needed
+output_path_combined = os.path.join(output_dir, '72-73.csv')  # Change filename if needed
 
 # Create the directory if it does not exist
 os.makedirs(output_dir, exist_ok=True)

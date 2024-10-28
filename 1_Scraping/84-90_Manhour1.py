@@ -11,6 +11,7 @@ import logging
 # Enable logging
 logging.basicConfig(level=logging.INFO)
 
+
 # Step 1: Scrape data from 'http://bppnet/report/pd/bppmh.aspx' and save as CSV
 # Define path to the WebDriver (e.g., ChromeDriver)
 driver_path = 'C:/chromedriver/chromedriver.exe'
