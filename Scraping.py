@@ -15,6 +15,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 current_year = datetime.now().year
 output_dir = r'F:\_BPP\Project\Scraping\1_Scraping\CSV'
+# output_dir = 'CSV'
 
 def fetch_table(url, table_id, output_file):
     try:
@@ -44,7 +45,7 @@ def fetch_table(url, table_id, output_file):
 
 # Scraping logic
 scraping_info = [
-    {'url': 'http://bppnet/report/whiss.aspx', 'table_id': 'GridView1', 'output_file': '50_Deliver.csv'},
+    {'url': 'http://bppnet/report/whiss.aspx', 'table_id': 'GridView1', 'output_file': '50.csv'},
     {'url': f'http://bppnet/qm/report/ccrlst.aspx?ktype=yr&key={current_year}', 'table_id': 'ctl00_MainContent_datagrid1', 'output_file': '10.csv'},
     {'url': 'http://bppnet/report/kpi/kpipdrw.aspx', 'table_id': 'ctl00_MainContent_GridView1', 'output_file': '20-31.csv'},
     {'url': 'http://bppnet/report/kpi/kpipdrw.aspx', 'table_id': 'ctl00_MainContent_GridView2', 'output_file': '17.csv'},
